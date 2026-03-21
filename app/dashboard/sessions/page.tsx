@@ -1,7 +1,10 @@
+ 
+
 "use client"
 
 import { useState } from "react"
 import { useAuth } from "@/lib/auth-store"
+import { RoleGuard } from "@/components/auth/role-guard"
 import { mockSessions } from "@/lib/mock-data"
 import type { TrainingSession } from "@/lib/mock-data"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,9 +12,14 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import {
   BookOpen,
@@ -37,7 +45,7 @@ const statusIcons = {
   completed: CheckCircle2,
 }
 
-export default function SessionsPage() {
+function SessionsPageContent() {
   const { user } = useAuth()
   const [sessions, setSessions] = useState<TrainingSession[]>(mockSessions)
   const [search, setSearch] = useState("")
@@ -45,17 +53,26 @@ export default function SessionsPage() {
   const [showCreate, setShowCreate] = useState(false)
   const [selectedSession, setSelectedSession] = useState<TrainingSession | null>(null)
 
+  const isAdmin = user?.role === "admin"
+  const isTrainer = user?.role === "trainer"
+  const canManageSessions = isAdmin || isTrainer
+
   const filtered = sessions.filter((s) => {
-    const matchesSearch = s.title.toLowerCase().includes(search.toLowerCase()) || s.department.toLowerCase().includes(search.toLowerCase())
+    const matchesSearch =
+      s.title.toLowerCase().includes(search.toLowerCase()) ||
+      s.department.toLowerCase().includes(search.toLowerCase())
+
     const matchesFilter = filter === "all" || s.status === filter
     return matchesSearch && matchesFilter
   })
 
-  const isAdmin = user?.role === "admin"
-
   function handleCreateSession(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+
+    if (!canManageSessions) return
+
     const fd = new FormData(e.currentTarget)
+
     const newSession: TrainingSession = {
       id: `s${Date.now()}`,
       title: fd.get("title") as string,
@@ -68,20 +85,22 @@ export default function SessionsPage() {
       enrolledCount: 0,
       maxCapacity: Number(fd.get("capacity")) || 30,
     }
+
     setSessions([newSession, ...sessions])
     setShowCreate(false)
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Training Sessions</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {(user?.role === "trainer" || isAdmin) ? "Create and manage training programs by department or team. Assign employees, set schedules, and control session status." : "Manage your assigned training sessions."}
+          <p className="mt-1 text-sm text-muted-foreground">
+            Create and manage training programs by department or team. Assign employees, set schedules, and control session status.
           </p>
         </div>
-        {(user?.role === "trainer" || isAdmin) && (
+
+        {canManageSessions && (
           <Button onClick={() => setShowCreate(true)} className="gap-2">
             <Plus className="size-4" />
             Create Session
@@ -89,10 +108,9 @@ export default function SessionsPage() {
         )}
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search sessions..."
             value={search}
@@ -100,6 +118,7 @@ export default function SessionsPage() {
             className="pl-9"
           />
         </div>
+
         <div className="flex items-center gap-2">
           <Filter className="size-4 text-muted-foreground" />
           {(["all", "ongoing", "upcoming", "completed"] as const).map((f) => (
@@ -116,15 +135,15 @@ export default function SessionsPage() {
         </div>
       </div>
 
-      {/* Sessions Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {filtered.map((session) => {
           const StatusIcon = statusIcons[session.status]
           const cfg = statusConfig[session.status]
+
           return (
             <Card
               key={session.id}
-              className="hover:shadow-md transition-shadow cursor-pointer"
+              className="cursor-pointer transition-shadow hover:shadow-md"
               onClick={() => setSelectedSession(session)}
             >
               <CardHeader className="pb-3">
@@ -134,31 +153,48 @@ export default function SessionsPage() {
                       <BookOpen className="size-5 text-primary" />
                     </div>
                     <div>
-                      <CardTitle className="text-sm font-semibold text-foreground leading-tight">
+                      <CardTitle className="text-sm font-semibold leading-tight text-foreground">
                         {session.title}
                       </CardTitle>
-                      <p className="text-xs text-muted-foreground mt-0.5">{session.department}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">{session.department}</p>
                     </div>
                   </div>
+
                   <Badge className={`shrink-0 text-[10px] ${cfg.color}`}>
-                    <StatusIcon className="size-3 mr-1" />
+                    <StatusIcon className="mr-1 size-3" />
                     {cfg.label}
                   </Badge>
                 </div>
               </CardHeader>
+
               <CardContent className="space-y-3">
-                <p className="text-xs text-muted-foreground line-clamp-2">{session.description}</p>
+                <p className="line-clamp-2 text-xs text-muted-foreground">{session.description}</p>
+
                 <div className="flex items-center gap-4 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Calendar className="size-3" />
-                    {new Date(session.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })} - {new Date(session.endDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    {new Date(session.startDate).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })}{" "}
+                    -{" "}
+                    {new Date(session.endDate).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })}
                   </span>
+
                   <span className="flex items-center gap-1">
                     <Users className="size-3" />
                     {session.enrolledCount}/{session.maxCapacity}
                   </span>
                 </div>
-                <Progress value={(session.enrolledCount / session.maxCapacity) * 100} className="h-1.5" />
+
+                <Progress
+                  value={(session.enrolledCount / session.maxCapacity) * 100}
+                  className="h-1.5"
+                />
+
                 <p className="text-[10px] text-muted-foreground">Trainer: {session.trainer}</p>
               </CardContent>
             </Card>
@@ -167,57 +203,69 @@ export default function SessionsPage() {
       </div>
 
       {filtered.length === 0 && (
-        <div className="text-center py-16">
-          <BookOpen className="size-10 mx-auto text-muted-foreground/40" />
+        <div className="py-16 text-center">
+          <BookOpen className="mx-auto size-10 text-muted-foreground/40" />
           <p className="mt-3 text-sm text-muted-foreground">No sessions found.</p>
         </div>
       )}
 
-      {/* Create Session Dialog */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-foreground">Create Training Session</DialogTitle>
             <DialogDescription>Set up a new training program for your team.</DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleCreateSession} className="space-y-4 mt-2">
+
+          <form onSubmit={handleCreateSession} className="mt-2 space-y-4">
             <div className="space-y-2">
               <Label className="text-foreground">Title</Label>
               <Input name="title" required placeholder="e.g. Cybersecurity Fundamentals" />
             </div>
+
             <div className="space-y-2">
               <Label className="text-foreground">Description</Label>
-              <Textarea name="description" required placeholder="Brief description of the training..." rows={3} />
+              <Textarea
+                name="description"
+                required
+                placeholder="Brief description of the training..."
+                rows={3}
+              />
             </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label className="text-foreground">Department</Label>
                 <Input name="department" required placeholder="e.g. IT" />
               </div>
+
               <div className="space-y-2">
                 <Label className="text-foreground">Max Capacity</Label>
                 <Input name="capacity" type="number" required defaultValue={30} />
               </div>
             </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label className="text-foreground">Start Date</Label>
                 <Input name="startDate" type="date" required />
               </div>
+
               <div className="space-y-2">
                 <Label className="text-foreground">End Date</Label>
                 <Input name="endDate" type="date" required />
               </div>
             </div>
+
             <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => setShowCreate(false)}>
+                Cancel
+              </Button>
               <Button type="submit">Create Session</Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* Session Detail Dialog */}
       <Dialog open={!!selectedSession} onOpenChange={() => setSelectedSession(null)}>
         <DialogContent className="sm:max-w-lg">
           {selectedSession && (
@@ -226,56 +274,87 @@ export default function SessionsPage() {
                 <DialogTitle className="text-foreground">{selectedSession.title}</DialogTitle>
                 <DialogDescription>{selectedSession.department} Department</DialogDescription>
               </DialogHeader>
-              <div className="space-y-4 mt-2">
+
+              <div className="mt-2 space-y-4">
                 <p className="text-sm text-muted-foreground">{selectedSession.description}</p>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div className="rounded-lg bg-muted p-3">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Status</p>
-                    <p className="text-sm font-medium text-foreground capitalize mt-0.5">{selectedSession.status}</p>
-                  </div>
-                  <div className="rounded-lg bg-muted p-3">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Trainer</p>
-                    <p className="text-sm font-medium text-foreground mt-0.5">{selectedSession.trainer}</p>
-                  </div>
-                  <div className="rounded-lg bg-muted p-3">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Duration</p>
-                    <p className="text-sm font-medium text-foreground mt-0.5">
-                      {new Date(selectedSession.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })} - {new Date(selectedSession.endDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Status</p>
+                    <p className="mt-0.5 text-sm font-medium capitalize text-foreground">
+                      {selectedSession.status}
                     </p>
                   </div>
+
                   <div className="rounded-lg bg-muted p-3">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Enrollment</p>
-                    <p className="text-sm font-medium text-foreground mt-0.5">{selectedSession.enrolledCount} / {selectedSession.maxCapacity}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Trainer</p>
+                    <p className="mt-0.5 text-sm font-medium text-foreground">
+                      {selectedSession.trainer}
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg bg-muted p-3">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Duration</p>
+                    <p className="mt-0.5 text-sm font-medium text-foreground">
+                      {new Date(selectedSession.startDate).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })}{" "}
+                      -{" "}
+                      {new Date(selectedSession.endDate).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg bg-muted p-3">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Enrollment</p>
+                    <p className="mt-0.5 text-sm font-medium text-foreground">
+                      {selectedSession.enrolledCount} / {selectedSession.maxCapacity}
+                    </p>
                   </div>
                 </div>
-                {(user?.role === "trainer" || isAdmin) && (
+
+                {canManageSessions && (
                   <>
                     <div className="grid grid-cols-2 gap-2">
                       <Button variant="outline" size="sm" className="gap-1.5 text-xs">
                         <Users className="size-3.5" />
                         Assign Employees
                       </Button>
+
                       <Button variant="outline" size="sm" className="gap-1.5 text-xs">
                         <Calendar className="size-3.5" />
                         Set Start & End Date
                       </Button>
+
                       <Button variant="outline" size="sm" className="gap-1.5 text-xs">
                         <Play className="size-3.5" />
                         {selectedSession.status === "upcoming" ? "Enable" : "Disable"}
                       </Button>
+
                       <Button variant="outline" size="sm" className="gap-1.5 text-xs">
                         <Clock className="size-3.5" />
                         Schedule Session
                       </Button>
                     </div>
+
                     <div className="flex gap-2 pt-1">
                       <Button variant="secondary" size="sm" className="flex-1 text-xs">
                         Update
                       </Button>
-                      <Button variant="destructive" size="sm" className="flex-1 text-xs" onClick={() => {
-                        setSessions(sessions.filter((s) => s.id !== selectedSession.id))
-                        setSelectedSession(null)
-                      }}>
+
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="flex-1 text-xs"
+                        onClick={() => {
+                          setSessions(sessions.filter((s) => s.id !== selectedSession.id))
+                          setSelectedSession(null)
+                        }}
+                      >
                         Delete
                       </Button>
                     </div>
@@ -287,5 +366,13 @@ export default function SessionsPage() {
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+export default function SessionsPage() {
+  return (
+    <RoleGuard allowed={["admin", "trainer"]}>
+      <SessionsPageContent />
+    </RoleGuard>
   )
 }

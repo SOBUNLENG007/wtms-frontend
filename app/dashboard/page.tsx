@@ -1,7 +1,13 @@
 "use client"
 
 import { useAuth } from "@/lib/auth-store"
-import { mockSessions, mockAssignments, mockNotifications, mockProgress, mockAttendance } from "@/lib/mock-data"
+import {
+  mockSessions,
+  mockAssignments,
+  mockNotifications,
+  mockProgress,
+  mockAttendance,
+} from "@/lib/mock-data"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
@@ -16,7 +22,6 @@ import {
   TrendingUp,
   Clock,
   FileText,
-  GraduationCap,
   Plus,
   Upload,
   UserPlus,
@@ -26,6 +31,8 @@ import {
   CheckCircle2,
   AlertTriangle,
   Megaphone,
+  ShieldCheck,
+  Briefcase,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -44,7 +51,7 @@ function StatCard({
 }) {
   return (
     <Link href={href}>
-      <Card className="hover:shadow-md transition-shadow cursor-pointer">
+      <Card className="cursor-pointer transition-shadow hover:shadow-md">
         <CardContent className="flex items-center gap-4 p-5">
           <div className={`flex size-12 shrink-0 items-center justify-center rounded-xl ${color}`}>
             <Icon className="size-6 text-card" />
@@ -75,27 +82,33 @@ function QuickActionCard({
   actions: { label: string; icon: React.ComponentType<{ className?: string }> }[]
 }) {
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="transition-shadow hover:shadow-md">
       <CardContent className="p-5">
-        <div className="flex items-start gap-3 mb-4">
+        <div className="mb-4 flex items-start gap-3">
           <div className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${color}`}>
             <Icon className="size-5 text-card" />
           </div>
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-foreground">{title}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2 mb-3">
+
+        <div className="mb-3 flex flex-wrap gap-2">
           {actions.map((action) => (
-            <Badge key={action.label} variant="outline" className="gap-1 text-[10px] py-1 px-2 cursor-default">
+            <Badge
+              key={action.label}
+              variant="outline"
+              className="cursor-default gap-1 px-2 py-1 text-[10px]"
+            >
               <action.icon className="size-3" />
               {action.label}
             </Badge>
           ))}
         </div>
+
         <Link href={href}>
-          <Button variant="ghost" size="sm" className="gap-1.5 text-xs w-full justify-between">
+          <Button variant="ghost" size="sm" className="w-full justify-between gap-1.5 text-xs">
             Go to Management
             <ArrowRight className="size-3.5" />
           </Button>
@@ -106,163 +119,83 @@ function QuickActionCard({
 }
 
 /* ================================================
-   TRAINER / ADMIN DASHBOARD
+   ADMIN DASHBOARD
    ================================================ */
-function TrainerDashboard({ userName }: { userName: string }) {
+function AdminDashboard({ userName }: { userName: string }) {
   const ongoingSessions = mockSessions.filter((s) => s.status === "ongoing")
-  const upcomingSessions = mockSessions.filter((s) => s.status === "upcoming")
-  const pendingAssignments = mockAssignments.filter((a) => a.status === "pending")
-  const submittedAssignments = mockAssignments.filter((a) => a.status === "submitted")
+  const totalUsers = 120
+  const totalTrainers = 12
+  const totalEmployees = 108
   const unreadNotifications = mockNotifications.filter((n) => !n.read)
-  const totalEnrolled = mockSessions.reduce((a, s) => a + s.enrolledCount, 0)
+  const submittedAssignments = mockAssignments.filter((a) => a.status === "submitted")
   const totalPresent = mockAttendance.filter((r) => r.status === "present" || r.status === "late").length
-  const participationRate = mockAttendance.length > 0 ? Math.round((totalPresent / mockAttendance.length) * 100) : 0
+  const participationRate =
+    mockAttendance.length > 0 ? Math.round((totalPresent / mockAttendance.length) * 100) : 0
 
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground text-balance">
           Welcome back, {userName.split(" ")[0]}
         </h1>
-        <p className="text-muted-foreground mt-1">
-          Here is an overview of your training management system.
+        <p className="mt-1 text-muted-foreground">
+          Here is the full administrative overview of the training system.
         </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Ongoing Sessions" value={ongoingSessions.length} icon={BookOpen} color="bg-primary" href="/dashboard/sessions" />
-        <StatCard label="Total Enrolled" value={totalEnrolled} icon={Users} color="bg-wtms-teal" href="/dashboard/attendance" />
-        <StatCard label="Pending Reviews" value={submittedAssignments.length} icon={ClipboardCheck} color="bg-wtms-orange" href="/dashboard/assignments" />
-        <StatCard label="Participation Rate" value={`${participationRate}%`} icon={BarChart3} color="bg-wtms-green" href="/dashboard/progress" />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Total Users" value={totalUsers} icon={Users} color="bg-primary" href="/dashboard/users" />
+        <StatCard label="Total Trainers" value={totalTrainers} icon={Briefcase} color="bg-wtms-teal" href="/dashboard/trainers" />
+        <StatCard label="Ongoing Sessions" value={ongoingSessions.length} icon={BookOpen} color="bg-wtms-orange" href="/dashboard/sessions" />
+        <StatCard label="Participation Rate" value={`${participationRate}%`} icon={BarChart3} color="bg-wtms-green" href="/dashboard/reports" />
       </div>
 
-      {/* Management Quick Actions */}
       <div>
-        <h2 className="text-base font-semibold text-foreground mb-4">Training Management</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <h2 className="mb-4 text-base font-semibold text-foreground">Admin Management</h2>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           <QuickActionCard
-            title="Session Management"
-            description="Create and manage training programs"
-            icon={BookOpen}
-            color="bg-primary"
-            href="/dashboard/sessions"
-            actions={[
-              { label: "Create Program", icon: Plus },
-              { label: "Assign Employees", icon: UserPlus },
-              { label: "Set Schedule", icon: Calendar },
-              { label: "Enable / Disable", icon: Settings },
-            ]}
-          />
-          <QuickActionCard
-            title="Material Management"
-            description="Upload and organize training materials"
-            icon={FileText}
-            color="bg-wtms-teal"
-            href="/dashboard/materials"
-            actions={[
-              { label: "Upload Documents", icon: Upload },
-              { label: "Organize by Dept.", icon: Settings },
-              { label: "Control Access", icon: Users },
-              { label: "PDF / Slides / Video", icon: FileText },
-            ]}
-          />
-          <QuickActionCard
-            title="Assessment Management"
-            description="Create quizzes, assignments, and grade work"
-            icon={ClipboardCheck}
-            color="bg-wtms-orange"
-            href="/dashboard/assignments"
-            actions={[
-              { label: "Create Quiz", icon: Plus },
-              { label: "Set Deadline", icon: Calendar },
-              { label: "Grade Work", icon: CheckCircle2 },
-              { label: "View Submissions", icon: FileText },
-            ]}
-          />
-          <QuickActionCard
-            title="Progress Tracking"
-            description="Monitor individual employee progress"
-            icon={BarChart3}
-            color="bg-wtms-green"
-            href="/dashboard/progress"
-            actions={[
-              { label: "Per Employee", icon: Users },
-              { label: "Per Session", icon: BookOpen },
-              { label: "Export PDF", icon: Download },
-              { label: "Analytics View", icon: TrendingUp },
-            ]}
-          />
-          <QuickActionCard
-            title="Attendance Tracking"
-            description="Record and monitor attendance per session"
+            title="User Management"
+            description="Manage employees, trainers, and admins"
             icon={Users}
             color="bg-primary"
-            href="/dashboard/attendance"
+            href="/dashboard/users"
             actions={[
-              { label: "Record Attendance", icon: CheckCircle2 },
-              { label: "Participation Rate", icon: BarChart3 },
-              { label: "Export Report", icon: Download },
-              { label: "View History", icon: Clock },
+              { label: "Create User", icon: Plus },
+              { label: "Assign Role", icon: ShieldCheck },
+              { label: "Enable / Disable", icon: Settings },
+              { label: "Department Setup", icon: Briefcase },
             ]}
           />
           <QuickActionCard
-            title="Notifications & Reminders"
-            description="Manage automated alerts and reminders"
-            icon={Bell}
+            title="Training Sessions"
+            description="Oversee all training programs"
+            icon={BookOpen}
             color="bg-wtms-teal"
-            href="/dashboard/notifications"
+            href="/dashboard/sessions"
             actions={[
-              { label: "Material Alert", icon: FileText },
-              { label: "Deadline Reminder", icon: AlertTriangle },
-              { label: "Session Reminder", icon: Calendar },
-              { label: "Performance Report", icon: Megaphone },
+              { label: "Create Session", icon: Plus },
+              { label: "Assign Trainer", icon: UserPlus },
+              { label: "Schedule", icon: Calendar },
+              { label: "Track Status", icon: Clock },
+            ]}
+          />
+          <QuickActionCard
+            title="Reports & Analytics"
+            description="Download reports and monitor performance"
+            icon={BarChart3}
+            color="bg-wtms-orange"
+            href="/dashboard/reports"
+            actions={[
+              { label: "Export PDF", icon: Download },
+              { label: "Attendance", icon: Users },
+              { label: "Progress", icon: TrendingUp },
+              { label: "Assignments", icon: ClipboardCheck },
             ]}
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Ongoing Sessions */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="text-base font-semibold text-foreground">Ongoing Sessions</CardTitle>
-            <Link href="/dashboard/sessions" className="text-xs text-primary hover:underline">
-              View all
-            </Link>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {ongoingSessions.map((session) => (
-              <div key={session.id} className="flex items-start gap-4 rounded-lg border border-border p-4">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <BookOpen className="size-5 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground text-sm">{session.title}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {session.trainer} &middot; {session.department}
-                  </p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Progress value={(session.enrolledCount / session.maxCapacity) * 100} className="h-1.5 flex-1" />
-                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                      {session.enrolledCount}/{session.maxCapacity}
-                    </span>
-                  </div>
-                </div>
-                <Badge variant="secondary" className="shrink-0 text-[10px] bg-wtms-teal/10 text-wtms-teal border-0">
-                  <Clock className="size-3 mr-1" />
-                  Ongoing
-                </Badge>
-              </div>
-            ))}
-            {ongoingSessions.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">No ongoing sessions.</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Submissions Needing Review */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle className="text-base font-semibold text-foreground">Submitted Work to Review</CardTitle>
@@ -277,38 +210,122 @@ function TrainerDashboard({ userName }: { userName: string }) {
                   <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-wtms-orange/10">
                     <ClipboardCheck className="size-5 text-wtms-orange" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground text-sm">{a.title}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{a.sessionTitle}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Badge variant="outline" className="text-[10px] capitalize">{a.type}</Badge>
-                      <span className="text-xs text-muted-foreground">Max: {a.maxScore} pts</span>
-                    </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground">{a.title}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{a.sessionTitle}</p>
                   </div>
-                  <Button variant="outline" size="sm" className="text-xs shrink-0">
-                    Grade
+                  <Button variant="outline" size="sm" className="shrink-0 text-xs">
+                    Review
                   </Button>
                 </div>
               ))
             ) : (
-              <div className="text-center py-8">
-                <CheckCircle2 className="size-8 mx-auto text-wtms-green/40" />
-                <p className="text-sm text-muted-foreground mt-2">All submissions reviewed!</p>
-              </div>
-            )}
-            {/* Also show pending assignments needing attention */}
-            {pendingAssignments.length > 0 && (
-              <div className="rounded-lg bg-wtms-orange/5 border border-wtms-orange/20 p-3">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="size-4 text-wtms-orange" />
-                  <p className="text-xs font-medium text-foreground">{pendingAssignments.length} assignments with upcoming deadlines</p>
-                </div>
-              </div>
+              <p className="py-4 text-center text-sm text-muted-foreground">No submissions waiting.</p>
             )}
           </CardContent>
         </Card>
 
-        {/* Upcoming Sessions */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardTitle className="text-base font-semibold text-foreground">Recent Notifications</CardTitle>
+            <Link href="/dashboard/notifications" className="text-xs text-primary hover:underline">
+              View all
+            </Link>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {unreadNotifications.slice(0, 5).map((n) => (
+              <div key={n.id} className="flex items-start gap-3 rounded-lg bg-muted/50 p-3">
+                <div className="mt-0.5 size-2 shrink-0 rounded-full bg-primary" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">{n.title}</p>
+                  <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{n.message}</p>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}
+
+/* ================================================
+   TRAINER DASHBOARD
+   ================================================ */
+function TrainerDashboard({ userName }: { userName: string }) {
+  const ongoingSessions = mockSessions.filter((s) => s.status === "ongoing")
+  const upcomingSessions = mockSessions.filter((s) => s.status === "upcoming")
+  const pendingAssignments = mockAssignments.filter((a) => a.status === "pending")
+  const submittedAssignments = mockAssignments.filter((a) => a.status === "submitted")
+  const totalEnrolled = mockSessions.reduce((a, s) => a + s.enrolledCount, 0)
+  const totalPresent = mockAttendance.filter((r) => r.status === "present" || r.status === "late").length
+  const participationRate =
+    mockAttendance.length > 0 ? Math.round((totalPresent / mockAttendance.length) * 100) : 0
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground text-balance">
+          Welcome back, {userName.split(" ")[0]}
+        </h1>
+        <p className="mt-1 text-muted-foreground">
+          Here is your trainer overview and teaching activity summary.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Ongoing Sessions" value={ongoingSessions.length} icon={BookOpen} color="bg-primary" href="/dashboard/sessions" />
+        <StatCard label="Total Enrolled" value={totalEnrolled} icon={Users} color="bg-wtms-teal" href="/dashboard/attendance" />
+        <StatCard label="Pending Reviews" value={submittedAssignments.length} icon={ClipboardCheck} color="bg-wtms-orange" href="/dashboard/assignments" />
+        <StatCard label="Participation Rate" value={`${participationRate}%`} icon={BarChart3} color="bg-wtms-green" href="/dashboard/progress" />
+      </div>
+
+      <div>
+        <h2 className="mb-4 text-base font-semibold text-foreground">Trainer Management</h2>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <QuickActionCard
+            title="Session Management"
+            description="Manage assigned training sessions"
+            icon={BookOpen}
+            color="bg-primary"
+            href="/dashboard/sessions"
+            actions={[
+              { label: "Create Program", icon: Plus },
+              { label: "Assign Employees", icon: UserPlus },
+              { label: "Set Schedule", icon: Calendar },
+              { label: "Enable / Disable", icon: Settings },
+            ]}
+          />
+          <QuickActionCard
+            title="Material Management"
+            description="Upload and manage learning materials"
+            icon={FileText}
+            color="bg-wtms-teal"
+            href="/dashboard/materials"
+            actions={[
+              { label: "Upload Documents", icon: Upload },
+              { label: "Control Access", icon: Users },
+              { label: "Slides / PDF", icon: FileText },
+              { label: "Organize", icon: Settings },
+            ]}
+          />
+          <QuickActionCard
+            title="Assessment Management"
+            description="Create and grade assessments"
+            icon={ClipboardCheck}
+            color="bg-wtms-orange"
+            href="/dashboard/assignments"
+            actions={[
+              { label: "Create Quiz", icon: Plus },
+              { label: "Set Deadline", icon: Calendar },
+              { label: "Grade Work", icon: CheckCircle2 },
+              { label: "View Submissions", icon: FileText },
+            ]}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle className="text-base font-semibold text-foreground">Upcoming Sessions</CardTitle>
@@ -322,49 +339,44 @@ function TrainerDashboard({ userName }: { userName: string }) {
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                   <Calendar className="size-5 text-primary" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground text-sm">{session.title}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{session.department}</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Calendar className="size-3 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">
-                      Starts {new Date(session.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                    </span>
-                  </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-foreground">{session.title}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{session.department}</p>
                 </div>
-                <Badge variant="secondary" className="shrink-0 text-[10px] bg-primary/10 text-primary border-0">
-                  <Clock className="size-3 mr-1" />
+                <Badge variant="secondary" className="border-0 bg-primary/10 text-[10px] text-primary">
                   Upcoming
                 </Badge>
               </div>
             ))}
-            {upcomingSessions.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">No upcoming sessions.</p>
-            )}
           </CardContent>
         </Card>
 
-        {/* Announcements / Recent Notifications */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="text-base font-semibold text-foreground">Recent Notifications</CardTitle>
-            <Link href="/dashboard/notifications" className="text-xs text-primary hover:underline">
+            <CardTitle className="text-base font-semibold text-foreground">Assignments Needing Attention</CardTitle>
+            <Link href="/dashboard/assignments" className="text-xs text-primary hover:underline">
               View all
             </Link>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {mockNotifications.slice(0, 5).map((n) => (
-              <div key={n.id} className="flex items-start gap-3 rounded-lg p-3 bg-muted/50">
-                <div className={`mt-0.5 size-2 shrink-0 rounded-full ${n.read ? "bg-muted-foreground/30" : "bg-primary"}`} />
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground">{n.title}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{n.message}</p>
-                  <p className="text-[10px] text-muted-foreground/60 mt-1">
-                    {new Date(n.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
-                  </p>
+          <CardContent className="space-y-4">
+            {pendingAssignments.length > 0 ? (
+              pendingAssignments.map((a) => (
+                <div key={a.id} className="flex items-start gap-4 rounded-lg border border-border p-4">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-wtms-orange/10">
+                    <AlertTriangle className="size-5 text-wtms-orange" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground">{a.title}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{a.sessionTitle}</p>
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="py-8 text-center">
+                <CheckCircle2 className="mx-auto size-8 text-wtms-green/40" />
+                <p className="mt-2 text-sm text-muted-foreground">No pending assignments.</p>
               </div>
-            ))}
+            )}
           </CardContent>
         </Card>
       </div>
@@ -383,30 +395,29 @@ function EmployeeDashboard({ userName }: { userName: string }) {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground text-balance">
           Welcome back, {userName.split(" ")[0]}
         </h1>
-        <p className="text-muted-foreground mt-1">
-          Here is your training overview for today.
+        <p className="mt-1 text-muted-foreground">
+          Here is your personal training overview for today.
         </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Ongoing Sessions" value={ongoingSessions.length} icon={BookOpen} color="bg-primary" href="/dashboard/my-sessions" />
         <StatCard label="Upcoming Deadlines" value={pendingAssignments.length} icon={ClipboardCheck} color="bg-wtms-teal" href="/dashboard/assignments" />
         <StatCard label="Unread Notifications" value={unreadNotifications.length} icon={Bell} color="bg-wtms-orange" href="/dashboard/notifications" />
         <StatCard label="Courses In Progress" value={inProgressCourses.length} icon={BarChart3} color="bg-wtms-green" href="/dashboard/my-progress" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Ongoing Sessions */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="text-base font-semibold text-foreground">Ongoing Sessions</CardTitle>
-            <Link href="/dashboard/my-sessions" className="text-xs text-primary hover:underline">View all</Link>
+            <CardTitle className="text-base font-semibold text-foreground">My Sessions</CardTitle>
+            <Link href="/dashboard/my-sessions" className="text-xs text-primary hover:underline">
+              View all
+            </Link>
           </CardHeader>
           <CardContent className="space-y-4">
             {ongoingSessions.map((session) => (
@@ -414,16 +425,13 @@ function EmployeeDashboard({ userName }: { userName: string }) {
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                   <BookOpen className="size-5 text-primary" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground text-sm">{session.title}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{session.trainer} &middot; {session.department}</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Progress value={(session.enrolledCount / session.maxCapacity) * 100} className="h-1.5 flex-1" />
-                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">{session.enrolledCount}/{session.maxCapacity}</span>
-                  </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-foreground">{session.title}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {session.trainer} &middot; {session.department}
+                  </p>
                 </div>
-                <Badge variant="secondary" className="shrink-0 text-[10px] bg-wtms-teal/10 text-wtms-teal border-0">
-                  <Clock className="size-3 mr-1" />
+                <Badge variant="secondary" className="border-0 bg-wtms-teal/10 text-[10px] text-wtms-teal">
                   Ongoing
                 </Badge>
               </div>
@@ -431,37 +439,12 @@ function EmployeeDashboard({ userName }: { userName: string }) {
           </CardContent>
         </Card>
 
-        {/* Upcoming Deadlines */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="text-base font-semibold text-foreground">Upcoming Deadlines</CardTitle>
-            <Link href="/dashboard/assignments" className="text-xs text-primary hover:underline">View all</Link>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {pendingAssignments.map((assignment) => (
-              <div key={assignment.id} className="flex items-start gap-4 rounded-lg border border-border p-4">
-                <div className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${assignment.type === "quiz" ? "bg-wtms-orange/10" : "bg-wtms-green/10"}`}>
-                  <ClipboardCheck className={`size-5 ${assignment.type === "quiz" ? "text-wtms-orange" : "text-wtms-green"}`} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground text-sm">{assignment.title}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{assignment.sessionTitle}</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Calendar className="size-3 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">Due: {new Date(assignment.deadline).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
-                  </div>
-                </div>
-                <Badge variant="outline" className="shrink-0 text-[10px] capitalize">{assignment.type}</Badge>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* My Progress */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle className="text-base font-semibold text-foreground">My Progress</CardTitle>
-            <Link href="/dashboard/my-progress" className="text-xs text-primary hover:underline">View all</Link>
+            <Link href="/dashboard/my-progress" className="text-xs text-primary hover:underline">
+              View all
+            </Link>
           </CardHeader>
           <CardContent className="space-y-4">
             {mockProgress.filter((p) => p.status !== "not-started").map((progress) => (
@@ -481,28 +464,6 @@ function EmployeeDashboard({ userName }: { userName: string }) {
             ))}
           </CardContent>
         </Card>
-
-        {/* Announcements */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="text-base font-semibold text-foreground">Announcements</CardTitle>
-            <Link href="/dashboard/notifications" className="text-xs text-primary hover:underline">View all</Link>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {mockNotifications.slice(0, 4).map((n) => (
-              <div key={n.id} className="flex items-start gap-3 rounded-lg p-3 bg-muted/50">
-                <div className={`mt-0.5 size-2 shrink-0 rounded-full ${n.read ? "bg-muted-foreground/30" : "bg-primary"}`} />
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground">{n.title}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{n.message}</p>
-                  <p className="text-[10px] text-muted-foreground/60 mt-1">
-                    {new Date(n.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
       </div>
     </div>
   )
@@ -513,13 +474,24 @@ function EmployeeDashboard({ userName }: { userName: string }) {
    ================================================ */
 export default function DashboardPage() {
   const { user } = useAuth()
+
   if (!user) return null
 
-  const isTrainerOrAdmin = user.role === "trainer" || user.role === "admin"
+  switch (user.role) {
+    case "admin":
+      return <AdminDashboard userName={user.name} />
 
-  return isTrainerOrAdmin ? (
-    <TrainerDashboard userName={user.name} />
-  ) : (
-    <EmployeeDashboard userName={user.name} />
-  )
+    case "trainer":
+      return <TrainerDashboard userName={user.name} />
+
+    case "employee":
+      return <EmployeeDashboard userName={user.name} />
+
+    default:
+      return (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          Invalid role: {user.role}
+        </div>
+      )
+  }
 }

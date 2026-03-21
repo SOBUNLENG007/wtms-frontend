@@ -23,7 +23,6 @@ export function ForgotPasswordForm({
     setMessage("");
     setLoading(true);
 
-    // TODO: Replace this timeout with your actual WTMS backend API call
     // await fetch("http://localhost:8080/api/v1/auth/forgot-password", ...)
     await new Promise((r) => setTimeout(r, 800));
 
